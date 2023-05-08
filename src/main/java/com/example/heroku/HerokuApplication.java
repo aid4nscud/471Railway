@@ -16,6 +16,8 @@
 
 package com.example.heroku;
 
+import java.util.Random;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,19 @@ import java.util.Map;
 @SpringBootApplication
 public class HerokuApplication {
 
+  public static String getRandomString() {
+    int length = 10;
+    int leftLimit = 48; // ASCII code for '0'
+    int rightLimit = 122; // ASCII code for 'z'
+    Random random = new Random();
+
+    return random.ints(leftLimit, rightLimit + 1)
+        .filter(i -> Character.isDigit(i) || Character.isLowerCase(i))
+        .limit(length)
+        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+        .toString();
+  }
+
   @Value("${spring.datasource.url}")
   private String dbUrl;
 
@@ -55,11 +70,13 @@ public class HerokuApplication {
 
   @RequestMapping("/db")
   String db(Map<String, Object> model) {
+    System.out.println("Aidan Scudder!!!");
     try (Connection connection = dataSource.getConnection()) {
       Statement stmt = connection.createStatement();
-      stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ticks (tick timestamp)");
-      stmt.executeUpdate("INSERT INTO ticks VALUES (now())");
-      ResultSet rs = stmt.executeQuery("SELECT tick FROM ticks");
+      stmt.executeUpdate(
+          "CREATE TABLE IF NOT EXISTS table_timestamp_and_random_string (tick timestamp, random_string varchar(30))");
+      stmt.executeUpdate("INSERT INTO table_timestamp_and_random_string VALUES (now(), '" + getRandomString() + "')");
+      ResultSet rs = stmt.executeQuery("SELECT tick FROM table_timestamp_and_random_string");
 
       ArrayList<String> output = new ArrayList<String>();
       while (rs.next()) {
